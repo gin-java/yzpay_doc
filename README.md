@@ -33,7 +33,7 @@ get方法
 
 POST请求方式：
 ```diff
---Content-Type=application/x-www-form-urlencoded
+-Content-Type=application/x-www-form-urlencoded
 ```
 ## 1.2 请求网关地址（找管理员获取支付下单网关地址）
 http://pay.xxx.com/lpay/pay/gateway
@@ -82,11 +82,11 @@ code_url:支付URL
 代付通过下单接口直接返回订单对应JSON数据。
 
 ### 1.1 请求方式
-POST
+POST Content-Type=application/x-www-form-urlencoded
 
 ### 1.2 请求网关地址
-正式请求地址请联系年轻帅气的系统管理员获取 
-https://api.xxxxx.com/lpay/agentpay/gateway
+（具体网关信息联系管理员获取）
+http://xxxx.com/lpay/agentpay/gateway
 
 ### 1.3 下单参数说明
 ### 参数说明 Tables
@@ -98,40 +98,27 @@ https://api.xxxxx.com/lpay/agentpay/gateway
 |total_fee |交易金额 |String(24) |总金额，以分为单位，不允许 包含任何字、符号。| 是
 |pay_type |支付类型 |String(2)| 86:代付；| 是
 |body |商品名称| String| 商品标题/交易标题/订单标题/ 订单关键字等。 |是
-|bank_account| 收款人账 号 |String |收款人银行账号或者UPI， ID。 |是 
+|bank_account| 收款人账 号 |String |收款卡号 「Gcash收款手机号」 |是 
 |account_holder |收款人姓 名| String |收款人姓名。 |是 
-|deposit_bank_code| 开户行代 码 |String |开户行代码。必填但是 不是必须正确，没有可随便填写|是
-|deposit_bank |开户行名 称| String |开户行名称。必填但是 不是必须正确，没有可随便填写|是
-|acct_type |转账类型 |String |bank：银行账户，wallet：用户钱包，upi用户传upi。 |是 
-|account_holder_mobile |开户人手 机号| String |开户人手机号。必填但是不是 必须正确 |是 
-|province |开户行所 属省份| String |开户行所属省份号。必填但是 不是必须正确，没有可随便填写 |是 
-|city |开户行所 属城市| String |开户行所属城市。必填但是 不是必须正确，没有可随便填写 |是 
-|sub_branch |收款方IFSC| String |收款方IFSC，印度银行卡代付必须填正确的(IFSC)| 是 
-|account_holder_id| 收款方邮箱| String |收款方邮箱| 是 
+|deposit_bank_code| 银行代 码 |String |固定gcash或maya|是
+|deposit_bank |开户行| String |固定gcash或maya|是
+|acct_type |转账类型 |String |bank 固定值 |是 
+|account_holder_mobile |手机号| String |必填 不使用可随便填写 |是 
+|province |省份| String |必填 不使用可随便填写 |是 
+|city |城市| String |必填 不使用可随便填写 |是 
+|sub_branch || String |必填 不使用可随便填写| 是 
+|account_holder_id| 收款方邮箱| String |必填 不使用可随便填写| 是 
 |sign |签名 |String(32)| 对支付信息使用MD5签名。| 是
-|notify_url |回调地址 |String(200)| 订单异步通知地址| 否
 
 
 ## 2. 接入步骤
 ### 2.1 生成订单MD5签名
 ```html
-订单信息（商户订单号+交易金额+收款人账号+收款人姓名+开户行名称+开户人手机号 +商户号+商户秘钥）进行UTF-8编码的MD5编码。
-订单信息（out_trade_no+total_fee+bank_account+account_holder+deposit_bank+account_holder_mobile+user_mch_id+商户秘钥）进行UTF-8编码的MD5编码。
-备注：直接字符串拼接不包符号 “+”
+订单信息（商户订单号+交易金额+收款人账号+收款人姓名+开户行名称+开户人手机号 +商户号+商户秘钥）进行UTF-8编码后台再进行32位小写MD5编码。
+拼接方式是直接拼接，不包含符号+，比如订单号123456789，商户号abcd，拼接后是123456789abcd
 ```
 ### 2.2 请求支付网关接口
-1.使用POST方式请求网关，传递参数如下
-```html
-sign=XXX
-mch_id=XXXX
-out_trade_no=XXXXX
-total fee=XxxXXX
-pay_type=XX
-body=XXXXXXX
-```
-`备注：普通表单提交数据,非JSON数据}`
-
-2.接收返回JSON数据，数据如下∶
+接收返回JSON数据，数据如下∶
 JSON数据说明
 | 参数        | 参数名称   |  类型(长 度) |参数说明 |是否必填
 | --------   | -----:  | :----:  |:----  |:----:  |
@@ -151,12 +138,13 @@ JSON数据说明
 ```
 
 # 支付和代付异步通知
-## 1 异步支付结果通知
+## 1 异步支付和代付结果通知
 聚合支付系统在接收到各类支付通道的支付结果通知后，会根据后台配置的通知URL， 通过POST请求的形式将支付结果作为参数通知到商户系统，商户系统根据订单通知的支 付结果进行后续业务逻辑的处理。当商户收到服务器异步通知并打印出success时，视为 该笔订单处理完成，否则平台会通过一定的策略（如通知频率 5/15/180/1800/1800/1800/1800/3600，单位：秒）定期重新发起通知。
 
 异步通知参数说明
 | 参数        | 参数名称   |  类型(长 度) |参数说明 |是否必填
 | --------   | -----:  | :----:  |:----  |:----:  |
+|mch_id |商户号 |String(24) |签约商户的商户号。| 是 
 |out_trade_no |商户订单号 |String(24) |合作商户唯一的订单号。| 是 
 |transaction_id| 平台订单号 |String(24) |平台交易号| 是
 |total_fee| 交易金额| String(24) |总金额，以分为单位，不允许包含任何字、符 号。 |是 
@@ -166,8 +154,8 @@ JSON数据说明
 |sign |签名| String(32) |订单信息MD5签名。| 是
 
 ```diff
--备注：通知信息可以通过request对象获取。 
--备注2：收到支付结果异步通知之后返回success。
+-备注：通知方式：POST传递FORM表单获取。 
+-备注2：收到支付结果异步通知之后返回小写 success。
 -备注3通知地址需要在商户后台配置
 ```
 
@@ -182,7 +170,7 @@ JSON数据说明
 ## 1. 代付订单查询接口说明 
 代付订单查询通过下单接口直接返回订单状态对应JSON数据。 
 ### 1.1 请求方式 
-POST GET 
+POST form表单
 ### 1.2 请求网关地址 
 正式请求地址请联系系统管理员获取 
 http://api.找管理员.com/lpay/agentpay/queryOrder
@@ -204,9 +192,10 @@ sign=XXX
 mch_id=XXXX 
 out_trade_no=XXXXX 
 ```
-备注：普通表单提交数据,非JSON数据 
-2. 接收返回JSON数据，数据如下：
+备注：表单提交数据,非JSON数据 
+1. 接收返回数据，数据如下：
 JSON数据说明
+
 | 参数        | 参数名称   |  类型(长 度) |参数说明 |是否必填
 | --------   | -----:  | :----:  |:----  |:----:  |
 |result_code |结果代码 |Int |0：审核中； 1：审核完成； 2：打款进行中； 3：打款成功； 4：订单关闭； 5：打款失败； 6：订单不存在； -1：签名验证失败；不是订单状态，是查 询不成功 -2：提交上游中； -3：代付异常,联系管理员； 只有状态3是代表打款成功，其他状态都不 是成功，只有状态5是打款失败，其他都不 是 |是
@@ -230,7 +219,7 @@ JSON数据说明
 
 # 商户余额查询接口说明 
 ## 1.1 请求方式 
-POST GET 
+POST form表单 
 ## 1.2 请求网关地址
 http://api.找管理员要地址.com/lpay/agentpay/queryCustomerAmount
 
@@ -243,6 +232,8 @@ http://api.找管理员要地址.com/lpay/agentpay/queryCustomerAmount
 ## 2. 接入步骤 
 ### 2.1 可提现余额查询MD5签名 
 签名信息（商户号+商户秘钥）进行UTF-8编码的MD5编码。 
+
+拼接方式是直接拼接，不包含符号+，比如商户号123456789，密钥abcd，拼接后是123456789abcd
 ### 2.2 请求支付网关接口 
  1. 使用POST方式请求网关，传递参数如下 
  ```html
